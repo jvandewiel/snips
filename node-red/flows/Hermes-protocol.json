@@ -1,0 +1,397 @@
+[
+    {
+        "id": "7c91d7ca.e891a8",
+        "type": "tab",
+        "label": "Hermes protocol",
+        "disabled": false,
+        "info": "As per https://github.com/snipsco/snips-platform-documentation/wiki/6.--Miscellaneous#hermes-protocol"
+    },
+    {
+        "id": "7c69eb8f.153394",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[9] hotword/toggleOn",
+        "topic": "hermes/hotword/toggleOn",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 290,
+        "y": 380,
+        "wires": [
+            [
+                "5833dbf1.7377a4"
+            ]
+        ]
+    },
+    {
+        "id": "2a7224a7.10bd1c",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[1] hotword/default/detected",
+        "topic": "hermes/hotword/default/detected",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 320,
+        "y": 260,
+        "wires": [
+            [
+                "7e41f173.24a46"
+            ]
+        ]
+    },
+    {
+        "id": "24bad264.5b2f3e",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[2] hotword/wait",
+        "topic": "hermes/hotword/wait",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 280,
+        "y": 320,
+        "wires": [
+            [
+                "325f7140.c34d7e"
+            ]
+        ]
+    },
+    {
+        "id": "95d12969.2024b8",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[3] asr/toggleOn",
+        "topic": "hermes/asr/toggleOn",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 300,
+        "y": 80,
+        "wires": [
+            [
+                "7f56c8a.fd9e338"
+            ]
+        ]
+    },
+    {
+        "id": "e428aae1.e6c418",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[-] tts/say",
+        "topic": "hermes/tts/say",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 860,
+        "y": 80,
+        "wires": [
+            [
+                "8e5052b9.125a1"
+            ]
+        ]
+    },
+    {
+        "id": "7d539c29.5bfe54",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[-] tts/sayFinished",
+        "topic": "hermes/tts/sayFinished",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 880,
+        "y": 140,
+        "wires": [
+            [
+                "50f57c8.8b0ac84"
+            ]
+        ]
+    },
+    {
+        "id": "f0153b4b.44d818",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[8] intent/#",
+        "topic": "hermes/intent/#",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 880,
+        "y": 440,
+        "wires": [
+            [
+                "145e82c5.bf95dd"
+            ]
+        ]
+    },
+    {
+        "id": "145e82c5.bf95dd",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1030,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "7f56c8a.fd9e338",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 510,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "8eddf225.48059",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[6] nlu/query",
+        "topic": "hermes/nlu/query",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 490,
+        "y": 440,
+        "wires": [
+            [
+                "8001d032.3738"
+            ]
+        ]
+    },
+    {
+        "id": "944fe057.13c49",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[7] nlu/intentParsed",
+        "topic": "hermes/nlu/intentParsed",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 510,
+        "y": 500,
+        "wires": [
+            [
+                "8addfb89.521558"
+            ]
+        ]
+    },
+    {
+        "id": "de4f10d3.945c5",
+        "type": "comment",
+        "z": "7c91d7ca.e891a8",
+        "name": "ASR (Automatic Speech Recognition)",
+        "info": "",
+        "x": 370,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "7241f585.054c7c",
+        "type": "comment",
+        "z": "7c91d7ca.e891a8",
+        "name": "TTS",
+        "info": "",
+        "x": 870,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "c951cb4e.1c78b8",
+        "type": "comment",
+        "z": "7c91d7ca.e891a8",
+        "name": "Hotword Detector",
+        "info": "",
+        "x": 100,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "74b58362.f4dbfc",
+        "type": "comment",
+        "z": "7c91d7ca.e891a8",
+        "name": "NLU",
+        "info": "",
+        "x": 470,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "b100157a.13d238",
+        "type": "comment",
+        "z": "7c91d7ca.e891a8",
+        "name": "Dialog Manager",
+        "info": "",
+        "x": 640,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "3437f2de.93fbbe",
+        "type": "comment",
+        "z": "7c91d7ca.e891a8",
+        "name": "Client Code",
+        "info": "",
+        "x": 890,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "801bb84f.02d628",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[5] asr/toggleOff",
+        "topic": "hermes/asr/toggleOff",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 300,
+        "y": 200,
+        "wires": [
+            [
+                "44084091.976dd"
+            ]
+        ]
+    },
+    {
+        "id": "a1a659ff.fa40a8",
+        "type": "mqtt in",
+        "z": "7c91d7ca.e891a8",
+        "name": "[4] asr/textCaptured",
+        "topic": "hermes/asr/textCaptured",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 310,
+        "y": 140,
+        "wires": [
+            [
+                "e262c687.cfe8a8"
+            ]
+        ]
+    },
+    {
+        "id": "e262c687.cfe8a8",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 510,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "44084091.976dd",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 510,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "5833dbf1.7377a4",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 510,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "325f7140.c34d7e",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 510,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "7e41f173.24a46",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 510,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "8addfb89.521558",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 690,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "8001d032.3738",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 690,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "8e5052b9.125a1",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1030,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "50f57c8.8b0ac84",
+        "type": "debug",
+        "z": "7c91d7ca.e891a8",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1030,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "886c2a9a.9122f8",
+        "type": "mqtt-broker",
+        "z": "",
+        "broker": "snips",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": true,
+        "keepalive": "60",
+        "cleansession": true,
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": ""
+    }
+]
