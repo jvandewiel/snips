@@ -1,4 +1,4 @@
-Collection of exported node-red flows, used in combination with Snips, Openhab etc.
+# Collection of exported node-red flows, used in combination with Snips, Openhab etc.
 
 File
 ----
