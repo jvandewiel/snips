@@ -7,4 +7,5 @@
 
 ```spotify-setup.json```: contains flow for key/auth handlilng of Spotify; requires (1) premium account and (2) API key and (3) config item with right global clientid/secret settings. Run through steps 1..4 and use spotifyApi in other flows to interact with Spotify
 
+```snips-musicplayer```: contains flow to respond to music intents and interact with spotify; uses Polly TTS and intent parser, requires spotifyApi to be available and working
 
