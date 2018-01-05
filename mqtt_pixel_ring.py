@@ -1,6 +1,7 @@
 """
  run specific code on pixelring based on incoming mqtt messages
  protocol
+ install respeaker lib as per https://github.com/respeaker/respeaker_python_library
 """
 
 import respeaker.usb_hid
