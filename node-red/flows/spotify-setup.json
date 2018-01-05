@@ -1,0 +1,482 @@
+
+[
+    {
+        "id": "7bfb2359.56decc",
+        "type": "tab",
+        "label": "Spotify Setup",
+        "disabled": false,
+        "info": "Spotify authentication flow and key refresh"
+    },
+    {
+        "id": "6cb16aae.e8a1a4",
+        "type": "comment",
+        "z": "7bfb2359.56decc",
+        "name": "Spotify setup",
+        "info": "See details:\nhttps://github.com/pmpkk/openhab_spotify-webconnect-api\nhttps://www.npmjs.com/package/spotify-web-api-node\nhttps://github.com/thelinmichael/spotify-web-api-node\n\n3 flows\n- initial (should only be done once)\n- refresh (every 45 mins)\n- persist (in file)",
+        "x": 90,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "a96e25b7.6e0408",
+        "type": "debug",
+        "z": "7bfb2359.56decc",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 490,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "61226a3c.c22974",
+        "type": "function",
+        "z": "7bfb2359.56decc",
+        "name": "Spotify prep /authorize",
+        "func": "/**\n * Generates a random string containing numbers and letters\n * @param  {number} length The length of the string\n * @return {string} The generated string\n */\nvar generateRandomString = function(length) {\n  var text = '';\n  var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';\n  for (var i = 0; i < length; i++) {\n    text += possible.charAt(Math.floor(Math.random() * possible.length));\n  }\n  return text;\n};\n\n// Get GLOBAL variables from config item\nvar creds = {\n    client_id: global.get('client_id'),\n    client_secret: global.get('client_secret'),\n    redirect_uri: global.get('redirect_uri'),\n    scope: global.get('scope'),\n    state: generateRandomString(16),\n    statekey: global.get('statekey'),\n    responseType: global.get('responseType')\n};\n\n\nglobal.set(\"spotifyCreds\", creds);\n\nvar url = 'https://accounts.spotify.com/authorize';\n    url += '?response_type=' + creds.responseType;\n    url += '&client_id=' + encodeURIComponent(creds.client_id);\n    url += '&scope=' + encodeURIComponent(creds.scope);\n    url += '&redirect_uri=' + encodeURIComponent(creds.redirect_uri);\n    url += '&state=' + encodeURIComponent(creds.state);\n    \n// URL to call MANUALLY\nnode.warn(url);\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 520,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9e332199.436cc",
+        "type": "function",
+        "z": "7bfb2359.56decc",
+        "name": "Spotify prep /api/token",
+        "func": "// get flow variable with params\nvar creds = global.get(\"spotifyCreds\");\n\nmsg.headers = {\n    \"Authorization\": \"Basic \" + (new Buffer(creds.client_id + ':' + creds.client_secret).toString('base64')),\n    \"Content-Type\": \"application/x-www-form-urlencoded\",\n    \"Accepts\": \"application/json\"\n}\n\nvar payload = \"code=\" + msg.payload.code; \n    payload += \"&redirect_uri=\" + encodeURI(creds.redirect_uri);\n    payload += \"&grant_type=authorization_code\";\n    \nmsg.payload = payload;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 540,
+        "y": 200,
+        "wires": [
+            [
+                "a15e4f17.ef7c"
+            ]
+        ]
+    },
+    {
+        "id": "a15e4f17.ef7c",
+        "type": "http request",
+        "z": "7bfb2359.56decc",
+        "name": "Call /api/token",
+        "method": "POST",
+        "ret": "txt",
+        "url": "https://accounts.spotify.com/api/token",
+        "tls": "",
+        "x": 760,
+        "y": 160,
+        "wires": [
+            [
+                "210fe0f5.1c536",
+                "6707c534.db332c"
+            ]
+        ]
+    },
+    {
+        "id": "6707c534.db332c",
+        "type": "debug",
+        "z": "7bfb2359.56decc",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 810,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "73d25236.856b4c",
+        "type": "debug",
+        "z": "7bfb2359.56decc",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 1430,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "fa5053e2.5ad09",
+        "type": "http in",
+        "z": "7bfb2359.56decc",
+        "name": "GET spotifycallback",
+        "url": "spotifycallback",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 290,
+        "y": 160,
+        "wires": [
+            [
+                "a96e25b7.6e0408",
+                "9e332199.436cc",
+                "f1f3e350.247ea"
+            ]
+        ]
+    },
+    {
+        "id": "f1f3e350.247ea",
+        "type": "http response",
+        "z": "7bfb2359.56decc",
+        "name": "Send Response",
+        "statusCode": "200",
+        "headers": {},
+        "x": 520,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "7042fd15.4fa834",
+        "type": "function",
+        "z": "7bfb2359.56decc",
+        "name": "Get creds",
+        "func": "// flow creds\nvar creds = global.get(\"spotifyCreds\");\n\nmsg.headers = {\n    \"Authorization\": \"Bearer \" + creds.access_token,\n    \"Accepts\": \"application/json\"\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 280,
+        "y": 320,
+        "wires": [
+            [
+                "387bf40f.88f84c"
+            ]
+        ]
+    },
+    {
+        "id": "8dfca3a5.c733c",
+        "type": "inject",
+        "z": "7bfb2359.56decc",
+        "name": "Trigger",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 90,
+        "y": 320,
+        "wires": [
+            [
+                "7042fd15.4fa834"
+            ]
+        ]
+    },
+    {
+        "id": "387bf40f.88f84c",
+        "type": "http request",
+        "z": "7bfb2359.56decc",
+        "name": "Call /me",
+        "method": "GET",
+        "ret": "txt",
+        "url": "https://api.spotify.com/v1/me",
+        "tls": "",
+        "x": 480,
+        "y": 320,
+        "wires": [
+            [
+                "a77693f7.eb049"
+            ]
+        ]
+    },
+    {
+        "id": "a77693f7.eb049",
+        "type": "debug",
+        "z": "7bfb2359.56decc",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 650,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "c266b4ec.7d4da8",
+        "type": "function",
+        "z": "7bfb2359.56decc",
+        "name": "Test spotifyAPI",
+        "func": "var spotifyApi = new context.global.SpotifyWebApi({\n    accessToken : global.get(\"spotifyCreds\").access_token\n});\n\nspotifyApi.getMe()\n  .then(function(data) {\n    node.warn('Some information about the authenticated user');\n    node.warn(data.body);\n  }, function(err) {\n    node.warn('Something went wrong!');\n    node.warn(err);\n  });\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 300,
+        "y": 360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2ea234e.4ab4ccc",
+        "type": "comment",
+        "z": "7bfb2359.56decc",
+        "name": "Step 1 - Manual",
+        "info": "",
+        "x": 100,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "e09882b7.ec3b6",
+        "type": "comment",
+        "z": "7bfb2359.56decc",
+        "name": "Step 2 - Manual: open url in browser, copy code etc",
+        "info": "",
+        "x": 210,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "dac919fc.608108",
+        "type": "comment",
+        "z": "7bfb2359.56decc",
+        "name": "Step 3 - Auto",
+        "info": "",
+        "x": 90,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "8e7652f5.d657b",
+        "type": "comment",
+        "z": "7bfb2359.56decc",
+        "name": "Step 4 - Manual: validate",
+        "info": "",
+        "x": 130,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "210fe0f5.1c536",
+        "type": "function",
+        "z": "7bfb2359.56decc",
+        "name": "Spotify handle tokens",
+        "func": "var creds = global.get(\"spotifyCreds\");\n\nvar data = JSON.parse(msg.payload);\n\n// set credentials\ncreds.access_token = data.access_token;\ncreds.token_type = data.token_type;\ncreds.expires_in = data.expires_in; // should trigger a timer to handle refresh\ncreds.refresh_token = data.refresh_token;\n\n// set flow var\nglobal.set(\"spotifyCreds\", creds);\n\n// debugging only!\nmsg.payload = global.get(\"spotifyCreds\");",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1000,
+        "y": 160,
+        "wires": [
+            [
+                "bbba2c34.783b"
+            ]
+        ]
+    },
+    {
+        "id": "bbba2c34.783b",
+        "type": "function",
+        "z": "7bfb2359.56decc",
+        "name": "Setup spotifyAPI",
+        "func": "// load spotify creds\nvar creds = global.get(\"spotifyCreds\");\n\n// little check\nif (creds.client_id === \"\" || creds.access_token === \"\") {\n    node.error(\"No valid acess and/or client in spotifyCreds\");\n    msg.payload = \"Error\";\n    return [null, msg];\n} else {\n    // Setting credentials can be done in the wrapper's constructor, or using the API object's setters.\n    var spotifyApi = new context.global.SpotifyWebApi({\n        accessToken : global.get(\"spotifyCreds\").access_token\n    });\n\n    // Test call\n    spotifyApi.getMe()\n        .then(function(data) {\n            node.warn('Some information about the authenticated user');\n            node.warn(data.body);\n        }, function(err) {\n            node.warn('Something went wrong!');\n            node.warn(err);\n    });\n    // return msg with creds to persist\n    msg.payload = creds;\n    return [msg, null];\n}",
+        "outputs": "2",
+        "noerr": 0,
+        "x": 1250,
+        "y": 160,
+        "wires": [
+            [
+                "de8b586.9d014a8"
+            ],
+            [
+                "73d25236.856b4c"
+            ]
+        ]
+    },
+    {
+        "id": "fa12a94b.9c4498",
+        "type": "inject",
+        "z": "7bfb2359.56decc",
+        "name": "Trigger",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 90,
+        "y": 360,
+        "wires": [
+            [
+                "c266b4ec.7d4da8"
+            ]
+        ]
+    },
+    {
+        "id": "aad9df12.842b7",
+        "type": "inject",
+        "z": "7bfb2359.56decc",
+        "name": "Trigger",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 290,
+        "y": 80,
+        "wires": [
+            [
+                "61226a3c.c22974"
+            ]
+        ]
+    },
+    {
+        "id": "aa5559e6.2a6068",
+        "type": "inject",
+        "z": "7bfb2359.56decc",
+        "name": "Trigger",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 1050,
+        "y": 100,
+        "wires": [
+            [
+                "bbba2c34.783b"
+            ]
+        ]
+    },
+    {
+        "id": "bec91283.087ae",
+        "type": "file in",
+        "z": "7bfb2359.56decc",
+        "name": "Load spotifyCreds",
+        "filename": "/home/openhabian/.node-red/files/spotifycreds.txt",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "x": 310,
+        "y": 460,
+        "wires": [
+            [
+                "e3647c01.0aa84"
+            ]
+        ]
+    },
+    {
+        "id": "de8b586.9d014a8",
+        "type": "file",
+        "z": "7bfb2359.56decc",
+        "name": "Persist spotifyCreds",
+        "filename": "/home/openhabian/.node-red/files/spotifycreds.txt",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "x": 1480,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "5120ee07.d3be9",
+        "type": "function",
+        "z": "7bfb2359.56decc",
+        "name": "Refresh spotifyAPI tokens",
+        "func": "var creds = global.get(\"spotifyCreds\");\n\n// Setting credentials can be done in the wrapper's constructor, or using the API object's setters.\nvar spotifyApi = new context.global.SpotifyWebApi({\n    clientId : creds.client_id,\n    clientSecret : creds.client_secret,\n    redirectUri : creds.redirect_uri\n});\n\nspotifyApi.setAccessToken(creds.access_token);\nspotifyApi.setRefreshToken(creds.refresh_token)\n\nspotifyApi.refreshAccessToken()\n    .then(function(data) {\n        //node.warn(data);\n        //node.warn('The access token has been refreshed!');\n        // Persis access token\n        var newToken = data.body['access_token'];\n        creds.access_token = newToken;\n        global.set(\"spotifyCreds\", creds);\n        \n        // set msg\n        msg.payload = creds;\n        msg.speak = \"Spotify token refreshed\";\n        node.warn(msg);\n        // use send due to promises!\n        //node.send([msg, null]);        \n    }, function(err) {\n        node.warn(err);\n        node.error('Could not refresh access token', err);\n        msg.speak = \"Error refreshing spotify token\";\n        node.send([null, msg]);        \n    });\n    \n\n",
+        "outputs": "2",
+        "noerr": 0,
+        "x": 770,
+        "y": 460,
+        "wires": [
+            [
+                "de8b586.9d014a8",
+                "69bfb5ec.bd1ddc"
+            ],
+            [
+                "8aaaed28.d2fb3"
+            ]
+        ]
+    },
+    {
+        "id": "67a80b4c.ef16b4",
+        "type": "inject",
+        "z": "7bfb2359.56decc",
+        "name": "every 50 min",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "3000",
+        "crontab": "",
+        "once": false,
+        "x": 500,
+        "y": 500,
+        "wires": [
+            [
+                "5120ee07.d3be9"
+            ]
+        ]
+    },
+    {
+        "id": "ed6299f5.da1e18",
+        "type": "comment",
+        "z": "7bfb2359.56decc",
+        "name": "Normal load from file",
+        "info": "",
+        "x": 110,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "8a22d364.6e77d",
+        "type": "inject",
+        "z": "7bfb2359.56decc",
+        "name": "Start",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "x": 90,
+        "y": 460,
+        "wires": [
+            [
+                "bec91283.087ae"
+            ]
+        ]
+    },
+    {
+        "id": "e3647c01.0aa84",
+        "type": "function",
+        "z": "7bfb2359.56decc",
+        "name": "Set creds",
+        "func": "var creds = JSON.parse(msg.payload);\nglobal.set(\"spotifyCreds\", creds);\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 520,
+        "y": 460,
+        "wires": [
+            [
+                "5120ee07.d3be9"
+            ]
+        ]
+    },
+    {
+        "id": "8aaaed28.d2fb3",
+        "type": "debug",
+        "z": "7bfb2359.56decc",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1050,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "69bfb5ec.bd1ddc",
+        "type": "debug",
+        "z": "7bfb2359.56decc",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1050,
+        "y": 440,
+        "wires": []
+    }
+]
