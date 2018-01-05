@@ -1,0 +1,1310 @@
+[
+    {
+        "id": "721cba7a.322d34",
+        "type": "subflow",
+        "name": "Polly TTS",
+        "info": "Convert incoming msg object to speech using \nAWS Polly and send output to Snips Audioserver\n\nInput: Expected incoming message object\n```\nmsg.payload = {\n    sessionId: will be transferred to topic\n    siteId: will be transferred to topic ('hermes/audioServer/'<siteId>'/playBytes/'<sessionId>\n    text: text to speak \n}\n```",
+        "in": [
+            {
+                "x": 120,
+                "y": 340,
+                "wires": [
+                    {
+                        "id": "76868325.f6b6bc"
+                    }
+                ]
+            }
+        ],
+        "out": []
+    },
+    {
+        "id": "4b3487df.083f58",
+        "type": "inject",
+        "z": "721cba7a.322d34",
+        "name": "Trigger",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 110,
+        "y": 160,
+        "wires": [
+            [
+                "959739f9.c7d3f8"
+            ]
+        ]
+    },
+    {
+        "id": "e3471929.d40378",
+        "type": "polly",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "voice": "29",
+        "ssml": false,
+        "dir": "/tmp",
+        "config": "12e966c.dfd7d99",
+        "x": 570,
+        "y": 340,
+        "wires": [
+            [
+                "79a6e506.73952c"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "959739f9.c7d3f8",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Test text",
+        "func": "var ordinalSuffix = function(i) {\n    var j = i % 10,\n        k = i % 100;\n    if (j == 1 && k != 11) {\n        return i + \"st\";\n    }\n    if (j == 2 && k != 12) {\n        return i + \"nd\";\n    }\n    if (j == 3 && k != 13) {\n        return i + \"rd\";\n    }\n    return i + \"th\";\n}\n\nvar date = new Date();\nvar days = [\"Sunday\",\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\",\"Saturday\"];\nvar months = [\"January\",\"February\",\"March\",\"April\",\"May\",\"June\",\"July\",\"August\",\"September\",\"October\",\"November\",\"December\"];\nvar weekday = days[date.getDay()];\nvar month = months[date.getMonth()];\nvar d = ordinalSuffix(date.getDate());\n/* get speakable time\nthe time is <hour> o'clock, \nthe time is a quarter past [15], half past[30], a quarter to[45] <hour>\nthe time is <minutes> past [<30], to [>30] <hour>\n*/\nvar m = date.getMinutes();\nvar h = date.getHours();\n// correct h\nh > 12 ? h = h - 12 : h;\nvar time;\n// get time\nswitch(m) {\n    case 0: \n        time = h + \" o' clock\"\n        break;\n    case 15:\n        time = \"a quarter past \" + h;\n        break;\n    case 30:\n        time = \"half past \" + h;\n        break;\n    case 45:\n        time = \"a quarter to \" + (h + 1);\n        break;\n    default:\n        if (m < 30 ) {\n            time = m + \" minutes past \" + h;\n        } else {\n            time = (60 - m) + \" minutes to \" + (h + 1);\n        }\n        break;\n}\n\n// define string\nvar txt = \"Today is \" + weekday + \" the \" + d + \" of \" + month +  \" and the time is \" + time + \".\";\n\nvar data = {\n    text: txt,\n    siteId:'default',\n    sessionId:'some:fake:made:upid'\n};\n\nmsg.payload = JSON.stringify(data);\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 260,
+        "y": 160,
+        "wires": [
+            [
+                "76868325.f6b6bc"
+            ]
+        ]
+    },
+    {
+        "id": "a4ba4a25.761fe8",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Prep conversion",
+        "func": "// conversion command\n// avconv -i \"{{filein}}\" -acodec pcm_u8 -ar 22050 \"{{fileout}}\"\n// filename also for loading later in process\nmsg.filename =  msg.file.substr(0, msg.file.lastIndexOf(\".\")) + \".wav\";\nmsg.payload = \"avconv -y -i \" + msg.file + \" \" + msg.filename;\n\nreturn msg;\n\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 780,
+        "y": 340,
+        "wires": [
+            [
+                "54524bf8.7f9634"
+            ]
+        ]
+    },
+    {
+        "id": "3fdc658e.c3759a",
+        "type": "mqtt out",
+        "z": "721cba7a.322d34",
+        "name": "playBytes",
+        "topic": "",
+        "qos": "2",
+        "retain": "false",
+        "broker": "53a4024.03074fc",
+        "x": 1200,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "4f0d2e98.f9a6",
+        "type": "file in",
+        "z": "721cba7a.322d34",
+        "name": "Load wav",
+        "filename": "",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "x": 1020,
+        "y": 100,
+        "wires": [
+            [
+                "3fdc658e.c3759a"
+            ]
+        ]
+    },
+    {
+        "id": "a4d83698.b1ebd8",
+        "type": "debug",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 650,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "54524bf8.7f9634",
+        "type": "exec",
+        "z": "721cba7a.322d34",
+        "command": "",
+        "addpay": true,
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "oldrc": false,
+        "name": "Convert .mp3 to .wav",
+        "x": 1000,
+        "y": 340,
+        "wires": [
+            [
+                "4f0d2e98.f9a6",
+                "c9c3060e.c05b08"
+            ],
+            [
+                "77be41fd.16215"
+            ],
+            [
+                "6abfb465.c2ce9c"
+            ]
+        ]
+    },
+    {
+        "id": "c9c3060e.c05b08",
+        "type": "debug",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1210,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "77be41fd.16215",
+        "type": "debug",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1210,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "6abfb465.c2ce9c",
+        "type": "debug",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1210,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "79a6e506.73952c",
+        "type": "switch",
+        "z": "721cba7a.322d34",
+        "name": "Cached?",
+        "property": "_polly.cached",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            },
+            {
+                "t": "false"
+            }
+        ],
+        "checkall": "true",
+        "outputs": 2,
+        "x": 680,
+        "y": 260,
+        "wires": [
+            [
+                "7b3c1f62.75f91"
+            ],
+            [
+                "a4ba4a25.761fe8"
+            ]
+        ],
+        "outputLabels": [
+            "cached",
+            ""
+        ]
+    },
+    {
+        "id": "7b3c1f62.75f91",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Load cached",
+        "func": "// cached, load only\nmsg.filename =  msg.file.substr(0, msg.file.lastIndexOf(\".\")) + \".wav\";\n\nreturn msg;\n\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "4f0d2e98.f9a6"
+            ]
+        ]
+    },
+    {
+        "id": "ec41042e.e4e138",
+        "type": "mqtt in",
+        "z": "721cba7a.322d34",
+        "name": "startListening",
+        "topic": "hermes/asr/startListening",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 370,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9e8849f9.853e78",
+        "type": "mqtt in",
+        "z": "721cba7a.322d34",
+        "name": "stopListening",
+        "topic": "hermes/asr/stopListening",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 371,
+        "y": 478,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9cef782b.fe6d28",
+        "type": "comment",
+        "z": "721cba7a.322d34",
+        "name": "Notes",
+        "info": "- if in dialog, start listening AFTER speech is conluded and stop during\n- include sessionId in the msg from/to TTS\n \nincoming msg.payload is JSON string as per below:\n\nmsg.payload = {\n    sessionId: will be transferred to topic\n    siteId: will be transferred to topic ('hermes/audioServer/'<siteId>'/playBytes/'<sessionId>\n    text: text to speak \n}\n",
+        "x": 90,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "76868325.f6b6bc",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Parse incoming",
+        "func": "// parse payload\n//var data = JSON.parse(msg.payload);\n//node.warn(data);\n\n// clean up text for any weird chars\n// &#x2f;\n\nvar sessionId = msg.payload.sessionId || '0000:0000:0000';\nvar siteId = msg.payload.siteId || 'default';\n\n// added SSML tags\nreturn {\n    topic: 'hermes/audioServer/' + siteId + '/playBytes/' + sessionId,\n    //payload: '<speak>' + msg.payload.text + '</speak>'\n    payload: msg.payload.text\n};",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 460,
+        "y": 240,
+        "wires": [
+            [
+                "e3471929.d40378",
+                "a4d83698.b1ebd8"
+            ]
+        ]
+    },
+    {
+        "id": "fdac5041.c3c75",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Prep sayFinished",
+        "func": "// calculate time to say this with 250 ms extra delay\n\nvar bufSize = msg.payload.length;\n\nnode.warn(bufSize);\n\n// we know: \n/*\ntime = FileLength / (Sample Rate * Channels * Bits per sample /8)\ntime = (101*1024) / (44000 * 2 * 16/8) \ntime = 103424 / 176000\ntime = 0.5876363636363636\n*/\n\nreturn msg;\n/*\npublish.single('hermes/tts/sayFinished', \npayload = {siteId: \"'+data['siteId']+'\", \"sessionId\": \"'+data['sessionId']+'\", \"id\": \"'+data['id']+'\"}',\n*/",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1230,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "12e966c.dfd7d99",
+        "type": "polly-config",
+        "z": "",
+        "name": "Polly"
+    },
+    {
+        "id": "53a4024.03074fc",
+        "type": "mqtt-broker",
+        "z": "",
+        "broker": "snips",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": true,
+        "keepalive": "60",
+        "cleansession": true,
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": ""
+    },
+    {
+        "id": "8007b759.35ce28",
+        "type": "subflow",
+        "name": "Intent Parser",
+        "info": "",
+        "in": [
+            {
+                "x": 460,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "3f704d69.b5c032"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 880,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "3f704d69.b5c032",
+                        "port": 0
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "3f704d69.b5c032",
+        "type": "function",
+        "z": "8007b759.35ce28",
+        "name": "Generic intent parser",
+        "func": "// parse intent and get slots\n\nvar data = JSON.parse(msg.payload);\n//node.warn(data);\n\n// set up basics\nvar intent = {\n    id: data.id,\n    siteId: data.siteId || 'default',\n    sessionId: data.sessionId || 'some:fake:made:upid',\n    customData: data.customData,  \n    input: data.input,\n    intentName: data.intent.intentName,\n    probability: data.intent.probability,\n    slots: {}\n};\n\n// parse slots into addresseable values and use value if available\n// e.g. slot[0].slotname = <name> becomes slot[<name>]={} \nvar newSlots = {}\n\nfor (var i = 0; i < data.slots.length; i++) {\n    var key = data.slots[i].slotName.toString();\n    // spec out into details ?\n    var value = data.slots[i];\n    newSlots[key] = value;\n}\nintent.slots = newSlots;\n\n//node.warn(intent);\n\nreturn {\n    payload: intent\n}\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 660,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a7a9fe7a.0f661",
+        "type": "inject",
+        "z": "8007b759.35ce28",
+        "name": "Test",
+        "topic": "",
+        "payload": "{\"sessionId\":\"1024c7f1-98e0-43af-a64e-f6f30ed593da\",\"customData\":null,\"siteId\":\"default\",\"input\":\"what's the weather in amsterdam\",\"intent\":{\"intentName\":\"searchWeatherForecast\",\"probability\":0.8521919},\"slots\":[{\"rawValue\":\"amsterdam\",\"value\":{\"kind\":\"Custom\",\"value\":\"Amsterdam\"},\"range\":{\"start\":22,\"end\":31},\"entity\":\"locality\",\"slotName\":\"forecast_locality\"}]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 430,
+        "y": 240,
+        "wires": [
+            [
+                "3f704d69.b5c032"
+            ]
+        ]
+    },
+    {
+        "id": "51330564.6bfa8c",
+        "type": "tab",
+        "label": "Snips - Musicplayer",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "55f9ae94.32835",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "addSong",
+        "topic": "hermes/intent/addSong",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 80,
+        "y": 1480,
+        "wires": [
+            [
+                "28dd3150.1e0ade"
+            ]
+        ]
+    },
+    {
+        "id": "78f118fc.449568",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "getInfos",
+        "topic": "hermes/intent/getInfos",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 70,
+        "y": 80,
+        "wires": [
+            [
+                "dac19e02.1b334"
+            ]
+        ]
+    },
+    {
+        "id": "75716c67.85b024",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "nextSong",
+        "topic": "hermes/intent/nextSong",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 80,
+        "y": 160,
+        "wires": [
+            [
+                "a96c14fc.b460a8"
+            ]
+        ]
+    },
+    {
+        "id": "14a7331c.3bbfed",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "playAlbum",
+        "topic": "hermes/intent/playAlbum",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 80,
+        "y": 1100,
+        "wires": [
+            [
+                "53128aca.35f3b4"
+            ]
+        ]
+    },
+    {
+        "id": "843f6fad.28a49",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "playArtist",
+        "topic": "hermes/intent/playArtist",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 80,
+        "y": 600,
+        "wires": [
+            [
+                "93673704.e53388"
+            ]
+        ]
+    },
+    {
+        "id": "90dab3bf.eef66",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "playPlaylist",
+        "topic": "hermes/intent/playPlaylist",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 80,
+        "y": 820,
+        "wires": [
+            [
+                "c4e611af.1a8cb"
+            ]
+        ]
+    },
+    {
+        "id": "9cadf8a7.5c2078",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "playSong",
+        "topic": "hermes/intent/playSong",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 80,
+        "y": 1540,
+        "wires": [
+            [
+                "28dd3150.1e0ade"
+            ]
+        ]
+    },
+    {
+        "id": "88ac8893.229758",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "previousSong",
+        "topic": "hermes/intent/previousSong",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 90,
+        "y": 220,
+        "wires": [
+            [
+                "a96c14fc.b460a8"
+            ]
+        ]
+    },
+    {
+        "id": "9d79bca6.e46a2",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "radioOn",
+        "topic": "hermes/intent/radioOn",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 70,
+        "y": 1600,
+        "wires": [
+            [
+                "28dd3150.1e0ade"
+            ]
+        ]
+    },
+    {
+        "id": "e20b5029.1682e",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "resumeMusic (play)",
+        "topic": "hermes/intent/resumeMusic",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 110,
+        "y": 340,
+        "wires": [
+            [
+                "a96c14fc.b460a8"
+            ]
+        ]
+    },
+    {
+        "id": "24c4e2be.83ca9e",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "speakerInterrupt (pause)",
+        "topic": "hermes/intent/speakerInterrupt",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 130,
+        "y": 280,
+        "wires": [
+            [
+                "a96c14fc.b460a8"
+            ]
+        ]
+    },
+    {
+        "id": "6e8f2444.914eec",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "volumeDown",
+        "topic": "hermes/intent/volumeDown",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 90,
+        "y": 400,
+        "wires": [
+            [
+                "2df730d.307f4d"
+            ]
+        ]
+    },
+    {
+        "id": "2a5f70d9.839a",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "volumeUp",
+        "topic": "hermes/intent/volumeUp",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 80,
+        "y": 460,
+        "wires": [
+            [
+                "c0b46222.a3934"
+            ]
+        ]
+    },
+    {
+        "id": "28dd3150.1e0ade",
+        "type": "debug",
+        "z": "51330564.6bfa8c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 350,
+        "y": 1480,
+        "wires": []
+    },
+    {
+        "id": "fc3f792.8ceda88",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Spotify: Player",
+        "func": "var spotifyApi = new context.global.SpotifyWebApi({\n    accessToken : global.get(\"spotifyCreds\").access_token\n});\n\nvar intent = msg.payload;\nvar text;\n\nswitch (intent.intentName) {\n    case \"resumeMusic\":\n        text = \"Resuming\";\n        spotifyApi.play().catch(function(err) { node.error(err); });\n        break;\n    case \"speakerInterrupt\":\n        text = \"Pausing\";\n        spotifyApi.pause().catch(function(err) { node.error(err); });\n        break;    \n    case \"nextSong\":\n        text = \"Playing next track\";\n        spotifyApi.skipToNext().catch(function(err) { node.error(err); });\n        break;    \n    case \"previousSong\":\n        text = \"Playing previous track\";\n        spotifyApi.skipToPrevious().catch(function(err) { node.error(err); });\n        break;\n}\n\nreturn {\n    payload: {\n        sessionId: intent.sessionId,\n        siteId: intent.siteId,   \n        text: text\n    }\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 920,
+        "y": 260,
+        "wires": [
+            [
+                "ab0e4685.038b38"
+            ]
+        ]
+    },
+    {
+        "id": "8d21ec49.0ef9d",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Spotify: getMyCurrentPlayingTrack",
+        "func": "var spotifyApi = new context.global.SpotifyWebApi({\n    accessToken : global.get(\"spotifyCreds\").access_token\n});\n\nvar intent = msg.payload;\n\nvar newPayload = {\n    sessionId: intent.sessionId,\n    siteId: intent.siteId,\n};\n\nspotifyApi.getMyCurrentPlayingTrack()\n    .then(function(response) {\n        var item = response.body.item;\n        //node.warn(item);\n        var artist = item.artists[0].name; // could be more\n        var trackname = item.name;\n        var album = item.album.name;\n        // define response\n        newPayload.text = \"This is the track \" + trackname + \" from the album \" + album + \" by \" + artist;\n        msg.payload = newPayload;\n        //node.warn(msg);\n        node.send(msg);\n    })\n    .catch(function(err) { \n        node.error(err); \n    });\n\nreturn null;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 541,
+        "y": 80,
+        "wires": [
+            [
+                "1f06ab1c.1972e5"
+            ]
+        ]
+    },
+    {
+        "id": "a20c8854.fed3d8",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Parse intent [playArtist] OBS",
+        "func": "// get intent parameters, should only be 1 slot and value\nvar data = JSON.parse(msg.payload);\n//node.warn(data);\n\nvar artist_name;\n// check for data\nif (data.slots.length === 0) {\n    var errMsg = {\n        speak: \"Which artist would you want to hear?\",\n        payload: {\n            sessionId: data.sessionId,\n            intentFilter:[\"jvandewiel:artistNameIntent\"],\n            text: \" \" // blank to fool snips\n        }\n    };\n    return [null, errMsg]\n} \n// handle and find artist\nif (data.slots[0].slotName === \"artist_name\") {\n    artist_name = data.slots[0].value.value;\n    node.warn(artist_name);\n}\n\nmsg = {\n    sessionId: data.sessionId,\n    artist: artist_name,\n    source: data\n};\n\nnode.warn(msg);\n\nreturn [msg,null];\n",
+        "outputs": "2",
+        "noerr": 0,
+        "x": 1200,
+        "y": 400,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "a24e6ef6.d91c4",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Test",
+        "topic": "",
+        "payload": "{\"sessionId\":\"9afe10e8-a2ac-44ee-85d5-0f9a48ba8154\",\"customData\":null,\"siteId\":\"default\",\"input\":\"what songs can play\",\"intent\":{\"intentName\":\"getInfos\",\"probability\":0.36169624},\"slots\":[{\"rawValue\":\"songs\",\"value\":{\"kind\":\"Custom\",\"value\":\"songs\"},\"range\":{\"start\":5,\"end\":10},\"entity\":\"music_item\",\"slotName\":\"music_item\"}]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 90,
+        "y": 40,
+        "wires": [
+            [
+                "dac19e02.1b334"
+            ]
+        ]
+    },
+    {
+        "id": "2338ea20.29fd66",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Test",
+        "topic": "",
+        "payload": "{\"sessionId\":\"b0b621e6-f834-4c96-b3c6-64a43e6fea7e\",\"customData\":null,\"siteId\":\"default\",\"input\":\"please play the album alkaline\",\"intent\":{\"intentName\":\"playAlbum\",\"probability\":0.65979195},\"slots\":[{\"rawValue\":\"alkaline\",\"value\":{\"kind\":\"Custom\",\"value\":\"alchemy\"},\"range\":{\"start\":22,\"end\":30},\"entity\":\"album_name\",\"slotName\":\"album_name\"}]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 90,
+        "y": 1160,
+        "wires": [
+            [
+                "53128aca.35f3b4"
+            ]
+        ]
+    },
+    {
+        "id": "c0b46222.a3934",
+        "type": "H command",
+        "z": "51330564.6bfa8c",
+        "name": "Volume Up",
+        "server": "e9046c2a.ec1d",
+        "activity": "24944887",
+        "label": "Spotify",
+        "command": "%7B%22command%22::%22VolumeUp%22,%22type%22::%22IRCommand%22,%22deviceId%22::%2242145586%22%7D",
+        "repeat": "1",
+        "x": 370,
+        "y": 460,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2df730d.307f4d",
+        "type": "H command",
+        "z": "51330564.6bfa8c",
+        "name": "Volume Down",
+        "server": "e9046c2a.ec1d",
+        "activity": "24944887",
+        "label": "Spotify",
+        "command": "%7B%22command%22::%22VolumeDown%22,%22type%22::%22IRCommand%22,%22deviceId%22::%2242145586%22%7D",
+        "repeat": "1",
+        "x": 380,
+        "y": 400,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9ce667b0.aaefe8",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Spotify: play top tracks",
+        "func": "var spotifyApi = new context.global.SpotifyWebApi({\n    accessToken : global.get(\"spotifyCreds\").access_token\n});\n\nvar intent = msg.payload;\nnode.warn(intent);\n\n// continue or get missing?\nif (intent.slots.artist_name === undefined) {\n    return [null,msg];\n}\n\nvar artistName = intent.slots.artist_name.value.value;\n\nspotifyApi.searchArtists(artistName)\n    .then(function(data) {\n        //node.warn(data);\n        // get first found artist\n        return data.body.artists.items[0];\n    })\n    .then(function(artist) {\n        node.warn(artist);\n        // return artist id\n        return spotifyApi.getArtistTopTracks(artist.id, \"US\");\n    })\n    .then(function(data){\n        //node.warn(data)\n        // return list of track ids\n        return data.body.tracks.map(function(t) { \n            return t.uri;\n        });\n    })\n    .then(function(uris) {\n        //node.send(tracks);\n        //node.warn(uris);\n        // play\n        return spotifyApi.play({uris: uris});\n    })\n    .then(function(data){\n        //node.warn(data);\n        node.send({\n            payload: {\n                sessionId: intent.sessionId,\n                siteId: intent.siteId,   \n                text: \"Playing songs by \" + artistName\n            }\n        });\n    })\n    .catch(function(err) {\n        //node.error('Error');\n        node.error(err);\n    });\n    ",
+        "outputs": "2",
+        "noerr": 0,
+        "x": 560,
+        "y": 600,
+        "wires": [
+            [
+                "c8d862a7.162d"
+            ],
+            [
+                "8e9253b5.5165d"
+            ]
+        ],
+        "outputLabels": [
+            "Success",
+            ""
+        ]
+    },
+    {
+        "id": "bf7226bd.0ca7e8",
+        "type": "comment",
+        "z": "51330564.6bfa8c",
+        "name": "Only for Onkyo - use getDevices()",
+        "info": "",
+        "x": 440,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "bb0672fc.59a26",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Parse intent",
+        "func": "// get intent parameters, should only be 1 slot and value\nvar data = JSON.parse(msg.payload);\nnode.warn(data);\n\nvar album_name;\n// check for data\nif (data.slots.length === 0) {\n    var errMsg = {\n        speak: \"Which album would you want to hear?\",\n        payload: {\n            topic: 'payload',\n            sessionId: data.sessionId,\n            intentFilter:['jvandewiel:albumNameIntent'], \n            text: \" \" // blank to fool snips\n        }\n    };\n    return [null, errMsg]\n} \n// handle and find artist\nif (data.slots[0].slotName === \"album_name\") {\n    album_name = data.slots[0].value.value;\n    node.warn(album_name);\n}\n\nmsg = {\n    sessionId: data.sessionId,\n    album_name: album_name,\n    source: data\n};\n\nnode.warn(msg);\n\nreturn [msg,null];\n",
+        "outputs": "2",
+        "noerr": 0,
+        "x": 110,
+        "y": 1680,
+        "wires": [
+            [],
+            [
+                "5f530706.b9c428"
+            ]
+        ]
+    },
+    {
+        "id": "dd7f38ac.9ac0a8",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "artistNameIntent",
+        "topic": "hermes/intent/jvandewiel:artistNameIntent",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 320,
+        "y": 660,
+        "wires": [
+            [
+                "e08916bc.354b48"
+            ]
+        ]
+    },
+    {
+        "id": "b6f60878.4fb258",
+        "type": "debug",
+        "z": "51330564.6bfa8c",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1010,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "79b4671c.175278",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Spotify: find and play album",
+        "func": "var spotifyApi = new context.global.SpotifyWebApi({\n    accessToken : global.get(\"spotifyCreds\").access_token\n});\n\nvar intent = msg.payload;\nvar albumName = intent.slots.album_name.value.value\n\nnode.warn(intent);\n\nvar spotifyAlbum;\n\nspotifyApi.searchAlbums(albumName)\n    .then(function(data) {\n        //node.warn(data);\n        // handle if many, can we specify this better\n        // get first found artist\n        return data.body.albums.items[0];\n    })\n    .then(function(album) {\n        //node.warn(album)\n        spotifyAlbum = album;\n        // play\n        return spotifyApi.getAlbumTracks(album.id)\n    })\n    .then(function(data){\n        //node.warn(data)\n        // return list of track ids\n        return data.body.items.map(function(t) { \n            return t.uri\n        });\n    })\n    .then(function(uris) {\n        //node.send(tracks);\n        //node.warn(uris);\n        // play\n        return spotifyApi.play({uris: uris})\n    })\n    .then(function(data){\n        //node.warn(data)\n        node.send({\n            payload: {\n                sessionId: intent.sessionId,\n                siteId: intent.siteId,   \n                text: \"Playing the album \" + spotifyAlbum.name + \", by \" + spotifyAlbum.artists[0].name\n            }\n        })\n    })\n    .catch(function(err) {\n        node.error('Error');\n        node.error(err);\n    });\n    ",
+        "outputs": "1",
+        "noerr": 0,
+        "x": 540,
+        "y": 1100,
+        "wires": [
+            [
+                "57c1870c.ef2988"
+            ]
+        ],
+        "outputLabels": [
+            "Success",
+            "Error"
+        ]
+    },
+    {
+        "id": "d85d038f.52352",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Test",
+        "topic": "",
+        "payload": "{\"sessionId\":\"709ad0c5-ab20-4db3-af1b-1d1c72de799e\",\"customData\":null,\"siteId\":\"default\",\"input\":\"can you play some jazz\",\"intent\":{\"intentName\":\"playPlaylist\",\"probability\":0.7123252},\"slots\":[{\"rawValue\":\"jazz\",\"value\":{\"kind\":\"Custom\",\"value\":\"jazz\"},\"range\":{\"start\":18,\"end\":22},\"entity\":\"playlist_name\",\"slotName\":\"playlist_name\"}]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 90,
+        "y": 880,
+        "wires": [
+            [
+                "c4e611af.1a8cb"
+            ]
+        ]
+    },
+    {
+        "id": "4529f7c3.ce3a58",
+        "type": "mqtt in",
+        "z": "51330564.6bfa8c",
+        "name": "albumNameIntent",
+        "topic": "hermes/intent/jvandewiel:albumNameIntent",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 110,
+        "y": 1400,
+        "wires": [
+            [
+                "aaff2a80.7c91c8"
+            ]
+        ]
+    },
+    {
+        "id": "d74f990f.6228f8",
+        "type": "debug",
+        "z": "51330564.6bfa8c",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 510,
+        "y": 1400,
+        "wires": []
+    },
+    {
+        "id": "aaff2a80.7c91c8",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Check and send",
+        "func": "// Receive original intent and new to set slot and play?\nvar data = JSON.parse(msg.payload);\n\nmsg.album_name = data.input;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 320,
+        "y": 1400,
+        "wires": [
+            [
+                "d74f990f.6228f8"
+            ]
+        ]
+    },
+    {
+        "id": "1bd8ed25.a4f973",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Wait & Merge",
+        "func": "// Receive original intent and new to set slot and play?\nvar oldIntent; // \nvar newIntent; // new intent\n\nif (msg.topic === 'original') {\n    oldIntent = msg.payload;\n    node.warn(oldIntent);\n    // set context\n    context.set('old', oldIntent);\n    node.warn(\"Set OLD\");\n}\n\nif (msg.payload.intentName === 'jvandewiel:artistNameIntent') {\n    newIntent = msg.payload;  \n    node.warn(newIntent);\n    // check\n    if (newIntent.sessionId === context.get('old').sessionId){\n        // set context\n        context.set('new', newIntent);\n    }\n    node.warn(\"Set NEW\");\n}\n\n// check if both contexts are set and send complete intent\nif (context.get('old') && context.get('new')) {\n        node.warn(\"Got BOTH\");\n        var payload = context.get('old');\n        // var tmp = context.get('new');\n        var slots = { \n            artist_name: { \n                value: { \n                    value: context.get('new').input\n                }\n            }\n        };\n        payload.slots = slots;\n        return {\n            payload:payload\n        };\n    }\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 780,
+        "y": 700,
+        "wires": [
+            [
+                "9ce667b0.aaefe8",
+                "b6f60878.4fb258"
+            ]
+        ]
+    },
+    {
+        "id": "5f530706.b9c428",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Wait for both",
+        "func": "//node.error(msg);\n\n// we get the payload to continue first and then want to wait until TTS is finised\nvar payload = context.get('payload') || {};\n\nif (msg.topic === 'hermes/audioServer/default/playFinished') {\n    context.set('tts', true);\n} else if (msg.topic === 'payload') {\n    context.set('payload', msg.payload);\n}\n\nif (context.get('tts') === true && context.get('payload') !== undefined) {\n    // reset\n    var p = context.get('payload');\n    context.set('payload', {});\n    return {\n        topic: 'continue', \n        payload: p\n    }\n} else {\n    return null\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 350,
+        "y": 1680,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a96c14fc.b460a8",
+        "type": "subflow:8007b759.35ce28",
+        "z": "51330564.6bfa8c",
+        "name": "Intent parser",
+        "x": 710,
+        "y": 260,
+        "wires": [
+            [
+                "fc3f792.8ceda88"
+            ]
+        ]
+    },
+    {
+        "id": "ab0e4685.038b38",
+        "type": "subflow:721cba7a.322d34",
+        "z": "51330564.6bfa8c",
+        "x": 1120,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "dac19e02.1b334",
+        "type": "subflow:8007b759.35ce28",
+        "z": "51330564.6bfa8c",
+        "name": "Intent parser",
+        "x": 280,
+        "y": 80,
+        "wires": [
+            [
+                "8d21ec49.0ef9d"
+            ]
+        ]
+    },
+    {
+        "id": "1f06ab1c.1972e5",
+        "type": "subflow:721cba7a.322d34",
+        "z": "51330564.6bfa8c",
+        "x": 800,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "c4e611af.1a8cb",
+        "type": "subflow:8007b759.35ce28",
+        "z": "51330564.6bfa8c",
+        "name": "Intent parser",
+        "x": 300,
+        "y": 820,
+        "wires": [
+            [
+                "86d78534.1d6358"
+            ]
+        ]
+    },
+    {
+        "id": "86d78534.1d6358",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Spotify: find and play playlist",
+        "func": "var spotifyApi = new context.global.SpotifyWebApi({\n    accessToken : global.get(\"spotifyCreds\").access_token\n});\n\nvar intent = msg.payload;\n\nmsg.payload = {\n    sessionId: intent.sessionId,\n    siteId: intent.siteId,\n    text: ''\n};\n\n// check for data\nnode.warn(intent);\nvar playlistName = intent.slots.playlist_name.rawValue || null;\n\nif (playlistName !== null) {\n    spotifyApi.searchPlaylists(playlistName)\n        .then(function(data) {\n            //node.warn(data);\n            // handle if many, can we specify this better\n            \n            // get first found artist\n            return data.body.playlists.items[0];\n        })\n        .then(function(playlist) {\n            //node.warn(playlist)\n            // tracks\n            return spotifyApi.getPlaylistTracks(playlist.owner.id, playlist.id)\n        })\n        .then(function(data){\n            //node.warn(data)\n            // return list of track ids\n            return data.body.items.map(function(t) {\n                //node.error(t);\n                return t.track.uri\n            });\n        })\n        .then(function(uris) {\n            //node.warn(uris);\n            // play\n            return spotifyApi.play({uris: uris})\n        })\n        .then(function(data){\n            //node.warn(data)\n            msg.payload.text = \"Playing some \" + playlistName;\n            node.send(msg)\n        })\n        .catch(function(err) {\n            node.error('Error');\n            node.error(err);\n        });    \n} else {\n    var errMsg = {\n        siteId: intent.siteId,\n        sessionId: intent.sessionId,\n        text: \"Which playlist would you want to hear?\", // blank to fool snips\n        //intentFilter:['artistNameIntent'], \n    };\n    return [null, errMsg];\n}\n\n\n",
+        "outputs": "1",
+        "noerr": 0,
+        "x": 540,
+        "y": 820,
+        "wires": [
+            [
+                "7ce81e3e.0d55"
+            ]
+        ]
+    },
+    {
+        "id": "7ce81e3e.0d55",
+        "type": "subflow:721cba7a.322d34",
+        "z": "51330564.6bfa8c",
+        "x": 760,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "8e9253b5.5165d",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "ArtistName missing",
+        "func": "// this one goes to TTS\nvar intent = msg.payload;\n\nvar msg = {\n        payload: {\n            sessionId: intent.sessionId,\n            siteId: intent.siteId,   \n            text: \"Which artist would you want to hear?\"\n        }\n    };\n        \n// this one goes to trigger extra intent\nvar newMsg = {\n    payload: intent,\n    topic: 'original'\n};\n\nreturn [msg,newMsg]",
+        "outputs": "2",
+        "noerr": 0,
+        "x": 830,
+        "y": 600,
+        "wires": [
+            [
+                "c8d862a7.162d"
+            ],
+            [
+                "1bd8ed25.a4f973",
+                "837db0a.c138c5"
+            ]
+        ]
+    },
+    {
+        "id": "b7e70bbd.4fc728",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Next",
+        "topic": "",
+        "payload": "{\"sessionId\":\"08ec08b8-1f7b-45fb-9aab-3e4cb48816b1\",\"customData\":null,\"siteId\":\"default\",\"input\":\"play the next song\",\"intent\":{\"intentName\":\"nextSong\",\"probability\":0.8118765},\"slots\":[]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 450,
+        "y": 140,
+        "wires": [
+            [
+                "a96c14fc.b460a8"
+            ]
+        ]
+    },
+    {
+        "id": "a93237b9.44bd08",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Prev",
+        "topic": "",
+        "payload": "{\"sessionId\":\"aafc9a4f-2d21-4ca5-b20a-41a7c2ec52d0\",\"customData\":null,\"siteId\":\"default\",\"input\":\"play the previous song\",\"intent\":{\"intentName\":\"previousSong\",\"probability\":0.91605467},\"slots\":[]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 450,
+        "y": 180,
+        "wires": [
+            [
+                "a96c14fc.b460a8"
+            ]
+        ]
+    },
+    {
+        "id": "5ac0391e.77a7d8",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Pause",
+        "topic": "",
+        "payload": "{\"sessionId\":\"64f56b06-599d-4eb4-b5f1-9ad8044c8c76\",\"customData\":null,\"siteId\":\"default\",\"input\":\"music please\",\"intent\":{\"intentName\":\"speakerInterrupt\",\"probability\":0.67005193},\"slots\":[]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 650,
+        "y": 140,
+        "wires": [
+            [
+                "a96c14fc.b460a8"
+            ]
+        ]
+    },
+    {
+        "id": "684dea28.ed58e4",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Resume",
+        "topic": "",
+        "payload": "{\"sessionId\":\"6c7bf7be-3d43-4a37-83c3-26040ce765e9\",\"customData\":null,\"siteId\":\"default\",\"input\":\"resume the music please\",\"intent\":{\"intentName\":\"resumeMusic\",\"probability\":0.86453253},\"slots\":[]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 660,
+        "y": 180,
+        "wires": [
+            [
+                "a96c14fc.b460a8"
+            ]
+        ]
+    },
+    {
+        "id": "93673704.e53388",
+        "type": "subflow:8007b759.35ce28",
+        "z": "51330564.6bfa8c",
+        "x": 290,
+        "y": 600,
+        "wires": [
+            [
+                "9ce667b0.aaefe8"
+            ]
+        ]
+    },
+    {
+        "id": "c8d862a7.162d",
+        "type": "subflow:721cba7a.322d34",
+        "z": "51330564.6bfa8c",
+        "x": 960,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "53128aca.35f3b4",
+        "type": "subflow:8007b759.35ce28",
+        "z": "51330564.6bfa8c",
+        "x": 290,
+        "y": 1100,
+        "wires": [
+            [
+                "79b4671c.175278"
+            ]
+        ]
+    },
+    {
+        "id": "57c1870c.ef2988",
+        "type": "subflow:721cba7a.322d34",
+        "z": "51330564.6bfa8c",
+        "x": 760,
+        "y": 1100,
+        "wires": []
+    },
+    {
+        "id": "837db0a.c138c5",
+        "type": "function",
+        "z": "51330564.6bfa8c",
+        "name": "Cont",
+        "func": "/*\ncalculate delay before we start listening after TTS \"Which artist ...\nsize = 84174\nSigned 16 bit Little Endian, Rate 22050 Hz, Mono\ntime = FileLength / (Sample Rate * Channels * Bits per sample /8)\ndelay = 84174 / (22050 * 1 * 16/8) = 84174 / 44100 = 1.90s ==> 2sec\n*/\nnode.warn(msg);\n\n// Continue session message\nreturn {\n    payload: {\n        sessionId: msg.payload.sessionId,\n        siteId: msg.payload.siteId,\n        text: ' ',\n        intentFilter: ['jvandewiel:artistNameIntent'],\n    },\n    delay: 2000\n};\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 990,
+        "y": 640,
+        "wires": [
+            [
+                "e2c38444.2af728"
+            ]
+        ]
+    },
+    {
+        "id": "ac9065b8.5ebe28",
+        "type": "mqtt out",
+        "z": "51330564.6bfa8c",
+        "name": "continueSession",
+        "topic": "hermes/dialogueManager/continueSession",
+        "qos": "",
+        "retain": "",
+        "broker": "886c2a9a.9122f8",
+        "x": 1380,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "e2c38444.2af728",
+        "type": "delay",
+        "z": "51330564.6bfa8c",
+        "name": "Wait for TTS",
+        "pauseType": "delayv",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 1170,
+        "y": 640,
+        "wires": [
+            [
+                "ac9065b8.5ebe28"
+            ]
+        ]
+    },
+    {
+        "id": "b7d75930.3bc488",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Test",
+        "topic": "",
+        "payload": "{\"sessionId\":\"1987fb4d-315a-484d-bba6-23a90a34f991\",\"customData\":null,\"siteId\":\"default\",\"input\":\"depeche mode\",\"intent\":{\"intentName\":\"jvandewiel:artistNameIntent\",\"probability\":1},\"slots\":[]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 310,
+        "y": 720,
+        "wires": [
+            [
+                "e08916bc.354b48"
+            ]
+        ]
+    },
+    {
+        "id": "e08916bc.354b48",
+        "type": "subflow:8007b759.35ce28",
+        "z": "51330564.6bfa8c",
+        "x": 530,
+        "y": 700,
+        "wires": [
+            [
+                "1bd8ed25.a4f973",
+                "9e421722.80f708"
+            ]
+        ]
+    },
+    {
+        "id": "9e421722.80f708",
+        "type": "debug",
+        "z": "51330564.6bfa8c",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 750,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "cbd1bf35.5e494",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Test Complete",
+        "topic": "",
+        "payload": "{\"sessionId\":\"3aaaeed6-2b07-4c5b-98b2-1a9b5aff6c12\",\"customData\":null,\"siteId\":\"default\",\"input\":\"play some michael jackson\",\"intent\":{\"intentName\":\"playArtist\",\"probability\":0.9083614},\"slots\":[{\"rawValue\":\"michael jackson\",\"value\":{\"kind\":\"Custom\",\"value\":\"michael jackson\"},\"range\":{\"start\":10,\"end\":25},\"entity\":\"artist_name\",\"slotName\":\"artist_name\"}]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 110,
+        "y": 560,
+        "wires": [
+            [
+                "93673704.e53388"
+            ]
+        ]
+    },
+    {
+        "id": "cc5b532a.ad729",
+        "type": "inject",
+        "z": "51330564.6bfa8c",
+        "name": "Test Missing",
+        "topic": "",
+        "payload": "{\"sessionId\":\"1987fb4d-315a-484d-bba6-23a90a34f991\",\"customData\":null,\"siteId\":\"default\",\"input\":\"can you play some music from the depeche mode\",\"intent\":{\"intentName\":\"playArtist\",\"probability\":0.4988392},\"slots\":[]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 110,
+        "y": 660,
+        "wires": [
+            [
+                "93673704.e53388"
+            ]
+        ]
+    },
+    {
+        "id": "886c2a9a.9122f8",
+        "type": "mqtt-broker",
+        "z": "",
+        "broker": "snips",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": true,
+        "keepalive": "60",
+        "cleansession": true,
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": ""
+    },
+    {
+        "id": "e9046c2a.ec1d",
+        "type": "harmony-server",
+        "z": "",
+        "name": "Harmony Livingroom",
+        "ip": "192.168.1.70"
+    }
+]
