@@ -1,0 +1,579 @@
+[
+    {
+        "id": "8007b759.35ce28",
+        "type": "subflow",
+        "name": "Intent Parser",
+        "info": "",
+        "in": [
+            {
+                "x": 460,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "3f704d69.b5c032"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 880,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "3f704d69.b5c032",
+                        "port": 0
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "3f704d69.b5c032",
+        "type": "function",
+        "z": "8007b759.35ce28",
+        "name": "Generic intent parser",
+        "func": "// parse intent and get slots\n\nvar data = JSON.parse(msg.payload);\n//node.warn(data);\n\n// set up basics\nvar intent = {\n    id: data.id,\n    siteId: data.siteId || 'default',\n    sessionId: data.sessionId || 'some:fake:made:upid',\n    customData: data.customData,  \n    input: data.input,\n    intentName: data.intent.intentName,\n    probability: data.intent.probability,\n    slots: {}\n};\n\n// parse slots into addresseable values and use value if available\n// e.g. slot[0].slotname = <name> becomes slot[<name>]={} \nvar newSlots = {}\n\nfor (var i = 0; i < data.slots.length; i++) {\n    var key = data.slots[i].slotName.toString();\n    // spec out into details ?\n    var value = data.slots[i];\n    newSlots[key] = value;\n}\nintent.slots = newSlots;\n\n//node.warn(intent);\n\nreturn {\n    payload: intent\n}\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 660,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a7a9fe7a.0f661",
+        "type": "inject",
+        "z": "8007b759.35ce28",
+        "name": "Test",
+        "topic": "",
+        "payload": "{\"sessionId\":\"1024c7f1-98e0-43af-a64e-f6f30ed593da\",\"customData\":null,\"siteId\":\"default\",\"input\":\"what's the weather in amsterdam\",\"intent\":{\"intentName\":\"searchWeatherForecast\",\"probability\":0.8521919},\"slots\":[{\"rawValue\":\"amsterdam\",\"value\":{\"kind\":\"Custom\",\"value\":\"Amsterdam\"},\"range\":{\"start\":22,\"end\":31},\"entity\":\"locality\",\"slotName\":\"forecast_locality\"}]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 430,
+        "y": 240,
+        "wires": [
+            [
+                "3f704d69.b5c032"
+            ]
+        ]
+    },
+    {
+        "id": "721cba7a.322d34",
+        "type": "subflow",
+        "name": "Polly TTS",
+        "info": "Convert incoming msg object to speech using \nAWS Polly and send output to Snips Audioserver\n\nInput: Expected incoming message object\n```\nmsg.payload = {\n    sessionId: will be transferred to topic\n    siteId: will be transferred to topic ('hermes/audioServer/'<siteId>'/playBytes/'<sessionId>\n    text: text to speak \n}\n```",
+        "in": [
+            {
+                "x": 120,
+                "y": 340,
+                "wires": [
+                    {
+                        "id": "76868325.f6b6bc"
+                    }
+                ]
+            }
+        ],
+        "out": []
+    },
+    {
+        "id": "4b3487df.083f58",
+        "type": "inject",
+        "z": "721cba7a.322d34",
+        "name": "Trigger",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 110,
+        "y": 160,
+        "wires": [
+            [
+                "959739f9.c7d3f8"
+            ]
+        ]
+    },
+    {
+        "id": "e3471929.d40378",
+        "type": "polly",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "voice": "29",
+        "ssml": false,
+        "dir": "/tmp",
+        "config": "12e966c.dfd7d99",
+        "x": 570,
+        "y": 340,
+        "wires": [
+            [
+                "79a6e506.73952c"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "959739f9.c7d3f8",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Test text",
+        "func": "var ordinalSuffix = function(i) {\n    var j = i % 10,\n        k = i % 100;\n    if (j == 1 && k != 11) {\n        return i + \"st\";\n    }\n    if (j == 2 && k != 12) {\n        return i + \"nd\";\n    }\n    if (j == 3 && k != 13) {\n        return i + \"rd\";\n    }\n    return i + \"th\";\n}\n\nvar date = new Date();\nvar days = [\"Sunday\",\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\",\"Saturday\"];\nvar months = [\"January\",\"February\",\"March\",\"April\",\"May\",\"June\",\"July\",\"August\",\"September\",\"October\",\"November\",\"December\"];\nvar weekday = days[date.getDay()];\nvar month = months[date.getMonth()];\nvar d = ordinalSuffix(date.getDate());\n/* get speakable time\nthe time is <hour> o'clock, \nthe time is a quarter past [15], half past[30], a quarter to[45] <hour>\nthe time is <minutes> past [<30], to [>30] <hour>\n*/\nvar m = date.getMinutes();\nvar h = date.getHours();\n// correct h\nh > 12 ? h = h - 12 : h;\nvar time;\n// get time\nswitch(m) {\n    case 0: \n        time = h + \" o' clock\"\n        break;\n    case 15:\n        time = \"a quarter past \" + h;\n        break;\n    case 30:\n        time = \"half past \" + h;\n        break;\n    case 45:\n        time = \"a quarter to \" + (h + 1);\n        break;\n    default:\n        if (m < 30 ) {\n            time = m + \" minutes past \" + h;\n        } else {\n            time = (60 - m) + \" minutes to \" + (h + 1);\n        }\n        break;\n}\n\n// define string\nvar txt = \"Today is \" + weekday + \" the \" + d + \" of \" + month +  \" and the time is \" + time + \".\";\n\nvar data = {\n    text: txt,\n    siteId:'default',\n    sessionId:'some:fake:made:upid'\n};\n\nmsg.payload = JSON.stringify(data);\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 260,
+        "y": 160,
+        "wires": [
+            [
+                "76868325.f6b6bc"
+            ]
+        ]
+    },
+    {
+        "id": "a4ba4a25.761fe8",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Prep conversion",
+        "func": "// conversion command\n// avconv -i \"{{filein}}\" -acodec pcm_u8 -ar 22050 \"{{fileout}}\"\n// filename also for loading later in process\nmsg.filename =  msg.file.substr(0, msg.file.lastIndexOf(\".\")) + \".wav\";\nmsg.payload = \"avconv -y -i \" + msg.file + \" \" + msg.filename;\n\nreturn msg;\n\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 780,
+        "y": 340,
+        "wires": [
+            [
+                "54524bf8.7f9634"
+            ]
+        ]
+    },
+    {
+        "id": "3fdc658e.c3759a",
+        "type": "mqtt out",
+        "z": "721cba7a.322d34",
+        "name": "playBytes",
+        "topic": "",
+        "qos": "2",
+        "retain": "false",
+        "broker": "53a4024.03074fc",
+        "x": 1200,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "4f0d2e98.f9a6",
+        "type": "file in",
+        "z": "721cba7a.322d34",
+        "name": "Load wav",
+        "filename": "",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "x": 1020,
+        "y": 100,
+        "wires": [
+            [
+                "3fdc658e.c3759a"
+            ]
+        ]
+    },
+    {
+        "id": "a4d83698.b1ebd8",
+        "type": "debug",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 650,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "54524bf8.7f9634",
+        "type": "exec",
+        "z": "721cba7a.322d34",
+        "command": "",
+        "addpay": true,
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "oldrc": false,
+        "name": "Convert .mp3 to .wav",
+        "x": 1000,
+        "y": 340,
+        "wires": [
+            [
+                "4f0d2e98.f9a6",
+                "c9c3060e.c05b08"
+            ],
+            [
+                "77be41fd.16215"
+            ],
+            [
+                "6abfb465.c2ce9c"
+            ]
+        ]
+    },
+    {
+        "id": "c9c3060e.c05b08",
+        "type": "debug",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1210,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "77be41fd.16215",
+        "type": "debug",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1210,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "6abfb465.c2ce9c",
+        "type": "debug",
+        "z": "721cba7a.322d34",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1210,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "79a6e506.73952c",
+        "type": "switch",
+        "z": "721cba7a.322d34",
+        "name": "Cached?",
+        "property": "_polly.cached",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "true"
+            },
+            {
+                "t": "false"
+            }
+        ],
+        "checkall": "true",
+        "outputs": 2,
+        "x": 680,
+        "y": 260,
+        "wires": [
+            [
+                "7b3c1f62.75f91"
+            ],
+            [
+                "a4ba4a25.761fe8"
+            ]
+        ],
+        "outputLabels": [
+            "cached",
+            ""
+        ]
+    },
+    {
+        "id": "7b3c1f62.75f91",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Load cached",
+        "func": "// cached, load only\nmsg.filename =  msg.file.substr(0, msg.file.lastIndexOf(\".\")) + \".wav\";\n\nreturn msg;\n\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "4f0d2e98.f9a6"
+            ]
+        ]
+    },
+    {
+        "id": "ec41042e.e4e138",
+        "type": "mqtt in",
+        "z": "721cba7a.322d34",
+        "name": "startListening",
+        "topic": "hermes/asr/startListening",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 370,
+        "y": 420,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9e8849f9.853e78",
+        "type": "mqtt in",
+        "z": "721cba7a.322d34",
+        "name": "stopListening",
+        "topic": "hermes/asr/stopListening",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 371,
+        "y": 478,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9cef782b.fe6d28",
+        "type": "comment",
+        "z": "721cba7a.322d34",
+        "name": "Notes",
+        "info": "- if in dialog, start listening AFTER speech is conluded and stop during\n- include sessionId in the msg from/to TTS\n \nincoming msg.payload is JSON string as per below:\n\nmsg.payload = {\n    sessionId: will be transferred to topic\n    siteId: will be transferred to topic ('hermes/audioServer/'<siteId>'/playBytes/'<sessionId>\n    text: text to speak \n}\n",
+        "x": 90,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "76868325.f6b6bc",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Parse incoming",
+        "func": "// parse payload\n//var data = JSON.parse(msg.payload);\n//node.warn(data);\n\n// clean up text for any weird chars\n// &#x2f;\n\nvar sessionId = msg.payload.sessionId || '0000:0000:0000';\nvar siteId = msg.payload.siteId || 'default';\n\n// added SSML tags\nreturn {\n    topic: 'hermes/audioServer/' + siteId + '/playBytes/' + sessionId,\n    //payload: '<speak>' + msg.payload.text + '</speak>'\n    payload: msg.payload.text\n};",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 460,
+        "y": 240,
+        "wires": [
+            [
+                "e3471929.d40378",
+                "a4d83698.b1ebd8"
+            ]
+        ]
+    },
+    {
+        "id": "fdac5041.c3c75",
+        "type": "function",
+        "z": "721cba7a.322d34",
+        "name": "Prep sayFinished",
+        "func": "// calculate time to say this with 250 ms extra delay\n\nvar bufSize = msg.payload.length;\n\nnode.warn(bufSize);\n\n// we know: \n/*\ntime = FileLength / (Sample Rate * Channels * Bits per sample /8)\ntime = (101*1024) / (44000 * 2 * 16/8) \ntime = 103424 / 176000\ntime = 0.5876363636363636\n*/\n\nreturn msg;\n/*\npublish.single('hermes/tts/sayFinished', \npayload = {siteId: \"'+data['siteId']+'\", \"sessionId\": \"'+data['sessionId']+'\", \"id\": \"'+data['id']+'\"}',\n*/",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1230,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "12e966c.dfd7d99",
+        "type": "polly-config",
+        "z": "",
+        "name": "Polly"
+    },
+    {
+        "id": "53a4024.03074fc",
+        "type": "mqtt-broker",
+        "z": "",
+        "broker": "snips",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": true,
+        "keepalive": "60",
+        "cleansession": true,
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": ""
+    },
+    {
+        "id": "2c993e75.200702",
+        "type": "tab",
+        "label": "Snips - Jokes",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "943376ab.9903a8",
+        "type": "function",
+        "z": "2c993e75.200702",
+        "name": "Prep call",
+        "func": "var intent = msg.payload;\n\n// payload gets reset\nmsg.sessionId = intent.sessionId;\nmsg.siteId = intent.siteId;\n\n// set random joke URl\n// only 1 now, some sort of rnd * urls.length()\n\nurls = [\n    {url: \"http://api.icndb.com/jokes/random\", type: \"Chuck\"}, \n    {url: \"http://ron-swanson-quotes.herokuapp.com/v2/quotes\", type: \"Swanson\"},\n    {url: \"https://icanhazdadjoke.com/\", type: \"Dad\"}\n    ];\n\nvar i = Math.floor(Math.random() * urls.length);\n\nmsg.url = urls[i].url;\nmsg.type = urls[i].type;\nmsg.headers = { \"Accept\": \"application/json\" };\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 440,
+        "y": 80,
+        "wires": [
+            [
+                "1790f9e1.21b576"
+            ]
+        ]
+    },
+    {
+        "id": "14db1978.af0607",
+        "type": "inject",
+        "z": "2c993e75.200702",
+        "name": "Test",
+        "topic": "",
+        "payload": "{\"sessionId\":\"221b0c49-a0dd-4752-9947-b3205205418a\",\"customData\":null,\"siteId\":\"default\",\"input\":\"what a joke\",\"intent\":{\"intentName\":\"jvandewiel:tellJoke\",\"probability\":0.55148107},\"slots\":[]}",
+        "payloadType": "str",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 90,
+        "y": 140,
+        "wires": [
+            [
+                "990cdcd0.093d4"
+            ]
+        ]
+    },
+    {
+        "id": "1790f9e1.21b576",
+        "type": "http request",
+        "z": "2c993e75.200702",
+        "name": "Get joke",
+        "method": "GET",
+        "ret": "obj",
+        "url": "",
+        "tls": "",
+        "x": 600,
+        "y": 80,
+        "wires": [
+            [
+                "88ad8efa.4766d"
+            ]
+        ]
+    },
+    {
+        "id": "a16c88f5.11ff08",
+        "type": "delay",
+        "z": "2c993e75.200702",
+        "name": "Delay punchline",
+        "pauseType": "delayv",
+        "timeout": "2",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "x": 980,
+        "y": 80,
+        "wires": [
+            [
+                "aba8aaac.4baf18",
+                "da6b3554.38d208"
+            ]
+        ]
+    },
+    {
+        "id": "aba8aaac.4baf18",
+        "type": "debug",
+        "z": "2c993e75.200702",
+        "name": "",
+        "active": false,
+        "console": "false",
+        "complete": "true",
+        "x": 1170,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "88ad8efa.4766d",
+        "type": "function",
+        "z": "2c993e75.200702",
+        "name": "Split punchline",
+        "func": "// Split in 2 parts if has a ? and send as 2 messages with delay\n//node.warn(msg);\n\nvar joke;\nvar punchline = \"\"; \n\nswitch (msg.type) {\n    case \"Chuck\":\n        // replace &***\n        joke = msg.payload.value.joke\n        break;\n    case \"Swanson\":\n        joke = \"Ron Swanson said, \" + msg.payload[0];\n        break;\n    case \"Dad\":\n        var joke = msg.payload.joke;\n        // check for ?\n        var parts = joke.split(\"?\");\n        //node.warn(parts);\n        if (parts.length > 1) {\n            // send joke on output 1 and punchline on 2\n            joke = parts[0] + \"?\";\n            punchline = parts[1];\n        } \n        break;\n}\n\n// replace any un-pronounceable chars\n// &#39;\njoke = joke.replace(\"&quot\", \"\");\njoke = joke.replace(\"&#39;\", \"\");\n\npunchline = punchline.replace(\"&quot\", \"\");\npunchline = punchline.replace(\"&#39;\", \"\");\n\n// send joke\nnode.send({\n    payload: {\n        siteId: msg.siteId,\n        sessionId: msg.sessionId,\n        text: joke\n    },\n    delay: 0\n});\n\n// send punchline with X secs delay\nif (punchline !== \"\"){\n    node.send({\n        payload: {\n            siteId: msg.siteId,\n            sessionId: msg.sessionId,\n            text: punchline\n        },\n        delay: 3000\n    });\n}\n\nreturn null;",
+        "outputs": "1",
+        "noerr": 0,
+        "x": 780,
+        "y": 80,
+        "wires": [
+            [
+                "a16c88f5.11ff08"
+            ]
+        ]
+    },
+    {
+        "id": "6f975de5.912754",
+        "type": "mqtt in",
+        "z": "2c993e75.200702",
+        "name": "tellJoke",
+        "topic": "hermes/intent/jvandewiel:tellJoke",
+        "qos": "2",
+        "broker": "886c2a9a.9122f8",
+        "x": 70,
+        "y": 80,
+        "wires": [
+            [
+                "990cdcd0.093d4",
+                "359d3754.095958"
+            ]
+        ]
+    },
+    {
+        "id": "da6b3554.38d208",
+        "type": "subflow:721cba7a.322d34",
+        "z": "2c993e75.200702",
+        "x": 1180,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "990cdcd0.093d4",
+        "type": "subflow:8007b759.35ce28",
+        "z": "2c993e75.200702",
+        "name": "Intent parser",
+        "x": 280,
+        "y": 80,
+        "wires": [
+            [
+                "943376ab.9903a8"
+            ]
+        ]
+    },
+    {
+        "id": "359d3754.095958",
+        "type": "debug",
+        "z": "2c993e75.200702",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "x": 270,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "886c2a9a.9122f8",
+        "type": "mqtt-broker",
+        "z": "",
+        "broker": "snips",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": true,
+        "keepalive": "60",
+        "cleansession": true,
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": ""
+    }
+]
