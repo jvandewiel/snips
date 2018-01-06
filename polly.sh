@@ -10,9 +10,8 @@
 # customtts = { command = ["/home/pi/polly.sh", "-w", "%%OUTPUT_FILE%%", "-l", "%%LANG%%", "%%TEXT%%"] }
 #
 # install avconv (apt-get install libav-tools) for the mp3->wav conversion
-# customtts = { command = ["pico2wave", "-w", "%%OUTPUT_FILE%%", "-l", "%%LANG%%", "%%TEXT%%"] }
 #
-# This will run '"/home/pi/polly.sh" "-w" "/tmp/.tmpbQHj3W.wav" "-l" "en" "For how long?"'
+# This will run e.g. '"/home/pi/polly.sh" "-w" "/tmp/.tmpbQHj3W.wav" "-l" "en" "For how long?"'
 #
 output_file="$2"
 textstr="$5"
