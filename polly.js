@@ -1,0 +1,3 @@
+/*
+Run polly on AWS JS version
+*/
