@@ -21,7 +21,12 @@
   "dependencies": {
     "aws-sdk": "^2.49.0",
     "crypto-js": "^3.1.9-1",
-    "fs": "0.0.1-security"
+    "fs": "0.0.1-security",
+    "aws.sdk":"", 
+    "crypto-js":"", 
+    "fs":"", 
+    "mkdirp":"", 
+    "path-exists":""
   },
   "engines" : {
     "node" : ">=6.11.2"
