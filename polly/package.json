@@ -1,1 +1,29 @@
-//
+{
+  "name": "polly-tts",
+  "version": "0.0.1",
+  "description": "Script for TTS using AWS polly",
+  "main": "polly-tts.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "/usr/bin/node ./polly-tts.js"
+  },
+  "author": "jvandewiel@gmail.com",
+  "license": "MIT",
+  "keywords": [
+    "polly",
+    "tts",
+    "snips"
+  ],
+  "bugs": {
+    "url": "https://github.com/jvandewiel/snips/issues"
+  },
+  "homepage": "https://github.com/jvandewiel/snips/",
+  "dependencies": {
+    "aws-sdk": "^2.49.0",
+    "crypto-js": "^3.1.9-1",
+    "fs": "0.0.1-security"
+  },
+  "engines" : {
+    "node" : ">=6.11.2"
+  }
+}
