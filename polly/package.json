@@ -22,7 +22,7 @@
     "aws-sdk": "^2.49.0",
     "crypto-js": "^3.1.9-1",
     "fs": "0.0.1-security",
-    "aws.sdk":"", 
+    "aws-sdk":"", 
     "crypto-js":"", 
     "fs":"", 
     "mkdirp":"", 
