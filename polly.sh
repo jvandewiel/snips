@@ -16,11 +16,16 @@
 # Input text and parameters will be used to calculate a hash for caching the mp3 files so only
 # "new speech" will call polly, existing mp3s will be transformed in wav files directly
 
+# for AWS config and running this with different user
+export HOME=/home/pi 
+
 # Folder to cache the files - this also contains the .txt file with all generated mp3
-cache="/home/pi/cache/"
+cache="/home/_snips/cache/"
 
 # Voice to use
 voice="Salli"
+#voice="Ruben"
+#voice="Lotte"
 
 # format to use
 format="mp3"
@@ -50,17 +55,19 @@ cachefile="$cache""$hash".mp3
 echo 'Cache file:' $cachefile 
 
 # do we have this?
-if [ -f "$cachefile" ]
+if [ -e "$cachefile" ]
 then
     echo "$cachefile found."
-    # convert
+    # convert    
     mpg123 -w "$outfile" "$cachefile"
+    exit 0
 else
     echo "$cachefile not found, running polly"
     # execute polly to get mp3 - check paths, voice set to Salli
-    /home/pi/.local/bin/aws polly synthesize-speech --output-format "$format" --voice-id "$voice" --sample-rate "$samplerate" --text "$text" "$cachefile"
+    aws polly synthesize-speech --output-format "$format" --voice-id "$voice" --sample-rate "$samplerate" --text "$text" "$cachefile"
     # update index
     echo "$hash" "$md5string" >> "$cache"index.txt
     # execute conversion to wav
     mpg123 -w $outfile $cachefile
+    exit 0
 fi
